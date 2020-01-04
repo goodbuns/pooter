@@ -1,11 +1,11 @@
 version: "3"
 
 services:
-  twooter:
+  pooter:
     build:
       context: ../../
-      dockerfile: ./images/twooterserver/Dockerfile
-    command: twooterserver
+      dockerfile: ./images/pooterserver/Dockerfile
+    command: pooterserver
     ports:
       - "8000:8000"
 

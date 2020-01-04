@@ -1,3 +1,3 @@
-# Twooter
+# pooter
 
-Twooter is Twitter for thots.
+Pooter is Twitter for thots and poots.

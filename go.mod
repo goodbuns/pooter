@@ -1,3 +1,3 @@
-module github.com/liftM/twooter
+module github.com/liftM/pooter
 
 go 1.13
