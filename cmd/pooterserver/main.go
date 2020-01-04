@@ -42,7 +42,7 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	// Set up routes.
-	r.Post("/users", func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/users.create", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Read request.
 		ctx := r.Context()
 
@@ -74,15 +74,15 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-	})
+	}))
 
-	r.Post("/users/{userID}/followers", func(w http.ResponseWriter, r *http.Request) {})
+	r.Handle("/users.follow", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
-	r.Post("/posts", func(w http.ResponseWriter, r *http.Request) {})
+	r.Handle("/users.posts", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
-	r.Get("/users/{userID}/feed", func(w http.ResponseWriter, r *http.Request) {})
+	r.Handle("/poots.post", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
-	r.Get("/users/{userID}/posts", func(w http.ResponseWriter, r *http.Request) {})
+	r.Handle("/poots.feed", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
 	log.Println("Listening on port :8000")
 	http.ListenAndServe(":8000", r)
