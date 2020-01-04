@@ -5,12 +5,17 @@ services:
     build:
       context: ../../
       dockerfile: ./images/pooterserver/Dockerfile
-    command: pooterserver
+    command: ["-db=postgresql://pooter:hunter2@db:5432/pooter"]
     ports:
       - "8000:8000"
+    depends_on: 
+      - db
 
   db:
-    image: postgres:12.1-alpine
+    build:
+      context: ../../images/pooterdb
+    ports:
+      - "5432:5432"
     volumes:
       - "db-data:/var/lib/postgresql/data"
 
