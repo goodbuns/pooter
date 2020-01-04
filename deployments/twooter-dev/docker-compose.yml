@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+  twooter:
+    build:
+      context: ../../
+      dockerfile: ./images/twooterserver/Dockerfile
+    command: twooterserver
+    ports:
+      - "8000:8000"
+
+  db:
+    image: postgres:12.1-alpine
+    volumes:
+      - "db-data:/var/lib/postgresql/data"
+
+volumes:
+  db-data:
