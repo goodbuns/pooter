@@ -6,6 +6,7 @@ CREATE TABLE users (
 
 CREATE TABLE posts (
   id      SERIAL PRIMARY KEY,
+  content TEXT,
   userid  INTEGER REFERENCES users(id)
 );
 

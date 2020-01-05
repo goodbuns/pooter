@@ -68,3 +68,40 @@ func (p *Postgres) FollowUser(ctx context.Context, userID, followID string) erro
 	}
 	return nil
 }
+
+func (p *Postgres) RetrievePassword(ctx context.Context, userID string) (string, error) {
+	var password string
+	u, err := strconv.Atoi(userID)
+	if err != nil {
+		return password, err
+	}
+
+	result := p.db.QueryRowContext(ctx,
+		`SELECT password FROM users
+		WHERE id = $1`, u)
+
+	err = result.Scan(&password)
+	if err != nil {
+		return "", err
+	}
+	return password, nil
+}
+
+func (p *Postgres) CreatePost(ctx context.Context, userID, content string) error {
+	u, err := strconv.Atoi(userID)
+	if err != nil {
+		return err
+	}
+
+	_, err = p.db.Exec(
+		`INSERT INTO posts
+			(id, content, userid)
+		VALUES
+			(DEFAULT, $1, $2)
+		RETURNING id`, content, u)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
