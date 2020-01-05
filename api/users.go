@@ -1,8 +1,6 @@
 package api
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/liftM/pooter/types"
@@ -22,10 +20,6 @@ type FollowUserRequest struct {
 	FollowedUserID types.UserID `json:"follow_id"`
 }
 
-type FollowUserResponse struct {
-	UserID types.UserID `json:"user_id"`
-}
-
 type ListUserPostsRequest struct {
 	UserID types.UserID `json:"user_id"`
 }
@@ -38,17 +32,8 @@ func (s *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Read request.
 	ctx := r.Context()
 
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		panic(err)
-	}
-
 	var req CreateUserRequest
-	err = json.Unmarshal(body, &req)
-	if err != nil {
-		panic(err)
-	}
+	s.ReadRequest(r, &req)
 
 	// Create user.
 	uid, err := s.db.CreateUser(ctx, req.Username, req.Password)
@@ -57,45 +42,24 @@ func (s *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return ID of created user.
-	res, err := json.Marshal(CreateUserResponse{UserID: uid})
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = w.Write(res)
-	if err != nil {
-		panic(err)
-	}
+	resp := CreateUserResponse{UserID: uid}
+	s.WriteResponse(w, &resp)
 }
 
 func (s *Server) FollowUser(w http.ResponseWriter, r *http.Request) {
 	// Read request.
 	ctx := r.Context()
 
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		panic(err)
-	}
-
 	var req FollowUserRequest
-	err = json.Unmarshal(body, &req)
-	if err != nil {
-		panic(err)
-	}
+	s.ReadRequest(r, &req)
 
 	// Follow user.
 	if err := s.db.FollowUser(ctx, req.UserID, req.FollowedUserID); err != nil {
 		panic(err)
 	}
 
-	// Return ID of followed user.
-	res, err := json.Marshal(FollowUserResponse{UserID: req.FollowedUserID})
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = w.Write(res)
+	// Return empty response.
+	_, err := w.Write([]byte{})
 	if err != nil {
 		panic(err)
 	}
@@ -105,17 +69,8 @@ func (s *Server) ListUserPosts(w http.ResponseWriter, r *http.Request) {
 	// Read request.
 	ctx := r.Context()
 
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		panic(err)
-	}
-
 	var req ListUserPostsRequest
-	err = json.Unmarshal(body, &req)
-	if err != nil {
-		panic(err)
-	}
+	s.ReadRequest(r, &req)
 
 	// Retrieve all posts from particular user.
 	p, err := s.db.ListUserPosts(ctx, req.UserID)
@@ -124,13 +79,6 @@ func (s *Server) ListUserPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return all posts for particular user.
-	res, err := json.Marshal(ListUserPostsResponse{Posts: p})
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = w.Write(res)
-	if err != nil {
-		panic(err)
-	}
+	resp := ListUserPostsResponse{Posts: p}
+	s.WriteResponse(w, &resp)
 }

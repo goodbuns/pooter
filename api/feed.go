@@ -1,9 +1,7 @@
 package api
 
 import (
-	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/liftM/pooter/types"
@@ -24,17 +22,8 @@ func (s *Server) ViewFeed(w http.ResponseWriter, r *http.Request) {
 	// Read request.
 	ctx := r.Context()
 
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		panic(err)
-	}
-
 	var req ViewFeedRequest
-	err = json.Unmarshal(body, &req)
-	if err != nil {
-		panic(err)
-	}
+	s.ReadRequest(r, &req)
 
 	// Verify auth.
 	ok, err := s.VerifyAuth(ctx, req.UserID, req.Password)
@@ -51,13 +40,6 @@ func (s *Server) ViewFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return created post content.
-	res, err := json.Marshal(ViewFeedResponse{Posts: posts})
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = w.Write(res)
-	if err != nil {
-		panic(err)
-	}
+	resp := ViewFeedResponse{Posts: posts}
+	s.WriteResponse(w, &resp)
 }

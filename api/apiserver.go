@@ -1,6 +1,8 @@
 package api
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -35,4 +37,31 @@ func NewServer(db *pooterdb.Postgres) *Server {
 
 func (s *Server) Start() {
 	http.ListenAndServe(":8000", s.router)
+}
+
+func (s *Server) ReadRequest(r *http.Request, req interface{}) {
+	// Read request.
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(body, req)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (s *Server) WriteResponse(w http.ResponseWriter, resp interface{}) {
+	// Write response.
+	res, err := json.Marshal(resp)
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = w.Write(res)
+	if err != nil {
+		panic(err)
+	}
 }
