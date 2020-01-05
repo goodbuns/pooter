@@ -41,3 +41,9 @@ List all posts by a user:
 ```
 curl localhost:8000/users.posts --data '{"user_id":"1"}'
 ```
+
+Check feed of a user (make sure user is following another user with posts):
+
+```
+curl localhost:8000/poots.feed --data '{"user_id":"1", "password":"hello", "limit": 10, "page":0}'
+```

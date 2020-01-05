@@ -3,6 +3,7 @@ package pooterdb
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -16,7 +17,7 @@ type PooterDB interface {
 	RetrievePassword(ctx context.Context, userID types.UserID) (string, error)
 	CreatePost(ctx context.Context, userID types.UserID, content string) error
 	ListUserPosts(ctx context.Context, userID types.UserID) ([]types.Post, error)
-	ViewFeed(ctx context.Context, userID types.UserID) ([]types.Post, error)
+	ViewFeed(ctx context.Context, userID types.UserID, page, limit int) ([]types.Post, error)
 }
 
 var _ PooterDB = &Postgres{}
@@ -135,7 +136,7 @@ func (p *Postgres) ListUserPosts(ctx context.Context, userID types.UserID) ([]ty
 	return posts, nil
 }
 
-func (p *Postgres) ViewFeed(ctx context.Context, userID types.UserID) ([]types.Post, error) {
+func (p *Postgres) ViewFeed(ctx context.Context, userID types.UserID, page, limit int) ([]types.Post, error) {
 	var posts []types.Post
 	u, err := strconv.Atoi(string(userID))
 	if err != nil {
@@ -143,7 +144,7 @@ func (p *Postgres) ViewFeed(ctx context.Context, userID types.UserID) ([]types.P
 	}
 
 	// Find all users the user is following.
-	var followingUsers []int
+	var followingUsers []string
 	rows, err := p.db.QueryContext(ctx,
 		`SELECT follow_id
 		FROM users INNER JOIN followers
@@ -152,27 +153,39 @@ func (p *Postgres) ViewFeed(ctx context.Context, userID types.UserID) ([]types.P
 
 	defer rows.Close()
 	for rows.Next() {
-		var user int
+		var user string
 		if err := rows.Scan(&user); err != nil {
 			return posts, err
 		}
 		followingUsers = append(followingUsers, user)
 	}
 
-	// Find 10 most recent posts.
+	// Find most recent posts.
+	offset := page * limit
+	if offset < 1 {
+		offset = 0
+	}
+
+	param := "{" + strings.Join(followingUsers, ",") + "}"
 	postRows, err := p.db.QueryContext(ctx,
-		`SELECT content FROM posts
-		WHERE user_id = $1`, u)
+		`SELECT content, user_id, created_at FROM posts
+		WHERE user_id = ANY($1::int[])
+		ORDER BY id DESC
+		LIMIT $2
+		OFFSET $3`, param, limit, offset)
 	if err != nil {
 		return posts, err
 	}
 	defer postRows.Close()
+
 	for postRows.Next() {
-		var post types.Post
-		if err := rows.Scan(&post); err != nil {
+		var user int64
+		var content string
+		var createdAt time.Time
+		if err := postRows.Scan(&content, &user, &createdAt); err != nil {
 			return posts, err
 		}
-		posts = append(posts, post)
+		posts = append(posts, types.Post{Content: content, UserID: types.UserID(string(int(user))), CreatedAt: createdAt})
 	}
 	return posts, nil
 }

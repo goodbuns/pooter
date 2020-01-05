@@ -12,6 +12,8 @@ import (
 type ViewFeedRequest struct {
 	UserID   types.UserID `json:"user_id"`
 	Password string
+	Page     int
+	Limit    int
 }
 
 type ViewFeedResponse struct {
@@ -43,7 +45,7 @@ func (s *Server) ViewFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// View feed.
-	posts, err := s.DB.ViewFeed(ctx, req.UserID)
+	posts, err := s.DB.ViewFeed(ctx, req.UserID, req.Page, req.Limit)
 	if err != nil {
 		panic(err)
 	}
