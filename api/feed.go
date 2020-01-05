@@ -8,7 +8,7 @@ import (
 )
 
 type ViewFeedRequest struct {
-	UserID   types.UserID `json:"user_id"`
+	Username string
 	Password string
 	Page     int
 	Limit    int
@@ -26,7 +26,7 @@ func (s *Server) ViewFeed(w http.ResponseWriter, r *http.Request) {
 	s.ReadRequest(r, &req)
 
 	// Verify auth.
-	ok, err := s.VerifyAuth(ctx, req.UserID, req.Password)
+	ok, err := s.db.Authenticate(ctx, req.Username, req.Password)
 	if err != nil {
 		panic(err)
 	} else if !ok {
@@ -34,7 +34,7 @@ func (s *Server) ViewFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// View feed.
-	posts, err := s.db.ViewFeed(ctx, req.UserID, req.Page, req.Limit)
+	posts, err := s.db.ViewFeed(ctx, req.Username, req.Page, req.Limit)
 	if err != nil {
 		panic(err)
 	}

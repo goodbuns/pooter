@@ -17,7 +17,7 @@ type FollowUserRequest struct {
 }
 
 type ListUserPostsRequest struct {
-	UserID types.UserID `json:"user_id"`
+	Username string
 }
 
 type ListUserPostsResponse struct {
@@ -70,7 +70,7 @@ func (s *Server) ListUserPosts(w http.ResponseWriter, r *http.Request) {
 	s.ReadRequest(r, &req)
 
 	// Retrieve all posts from particular user.
-	p, err := s.db.ListUserPosts(ctx, req.UserID)
+	p, err := s.db.ListUserPosts(ctx, req.Username)
 	if err != nil {
 		panic(err)
 	}

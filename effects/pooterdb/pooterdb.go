@@ -2,7 +2,6 @@ package pooterdb
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"time"
 
@@ -14,10 +13,10 @@ import (
 type PooterDB interface {
 	CreateUser(ctx context.Context, username, password string) error
 	FollowUser(ctx context.Context, user, idol string) error
-	RetrievePassword(ctx context.Context, userID types.UserID) (string, error)
-	CreatePost(ctx context.Context, userID types.UserID, content string) error
-	ListUserPosts(ctx context.Context, userID types.UserID) ([]types.Post, error)
-	ViewFeed(ctx context.Context, userID types.UserID, page, limit int) ([]types.Post, error)
+	Authenticate(ctx context.Context, username, password string) (bool, error)
+	CreatePost(ctx context.Context, username, content string) error
+	ListUserPosts(ctx context.Context, username string) ([]types.Post, error)
+	ViewFeed(ctx context.Context, username string, page, limit int) ([]types.Post, error)
 }
 
 var _ PooterDB = &Postgres{}
@@ -62,6 +61,20 @@ func (p *Postgres) UserID(ctx context.Context, username string) (int, error) {
 	return uid, nil
 }
 
+func (p *Postgres) Username(ctx context.Context, userID int64) (string, error) {
+	var name string
+
+	result := p.db.QueryRowContext(ctx,
+		`SELECT username FROM users
+		WHERE id = $1`, userID)
+	err := result.Scan(&name)
+	if err != nil {
+		return name, err
+	}
+
+	return name, nil
+}
+
 func (p *Postgres) FollowUser(ctx context.Context, username, idol string) error {
 	u, err := p.UserID(ctx, username)
 	if err != nil {
@@ -86,26 +99,21 @@ func (p *Postgres) FollowUser(ctx context.Context, username, idol string) error 
 	return nil
 }
 
-func (p *Postgres) RetrievePassword(ctx context.Context, userID types.UserID) (string, error) {
-	var password string
-	u, err := strconv.Atoi(string(userID))
-	if err != nil {
-		return password, err
-	}
-
+func (p *Postgres) Authenticate(ctx context.Context, username, password string) (bool, error) {
+	var pw string
 	result := p.db.QueryRowContext(ctx,
 		`SELECT password FROM users
-		WHERE id = $1`, u)
+		WHERE username = $1`, username)
 
-	err = result.Scan(&password)
+	err := result.Scan(&pw)
 	if err != nil {
-		return "", err
+		return false, err
 	}
-	return password, nil
+	return password == pw, nil
 }
 
-func (p *Postgres) CreatePost(ctx context.Context, userID types.UserID, content string) error {
-	u, err := strconv.Atoi(string(userID))
+func (p *Postgres) CreatePost(ctx context.Context, username, content string) error {
+	u, err := p.UserID(ctx, username)
 	if err != nil {
 		return err
 	}
@@ -122,15 +130,16 @@ func (p *Postgres) CreatePost(ctx context.Context, userID types.UserID, content 
 	return nil
 }
 
-func (p *Postgres) ListUserPosts(ctx context.Context, userID types.UserID) ([]types.Post, error) {
+func (p *Postgres) ListUserPosts(ctx context.Context, username string) ([]types.Post, error) {
 	var posts []types.Post
-	u, err := strconv.Atoi(string(userID))
+	u, err := p.UserID(ctx, username)
 	if err != nil {
 		return posts, err
 	}
+
 	rows, err := p.db.QueryContext(ctx,
 		`SELECT content, author, created_at FROM posts
-		WHERE user_id = $1`, u)
+		WHERE author = $1`, u)
 	if err != nil {
 		return posts, err
 	}
@@ -142,14 +151,20 @@ func (p *Postgres) ListUserPosts(ctx context.Context, userID types.UserID) ([]ty
 		if err := rows.Scan(&content, &user, &createdAt); err != nil {
 			return posts, err
 		}
-		posts = append(posts, types.Post{Content: content, UserID: types.UserID(string(int(user))), CreatedAt: createdAt})
+
+		name, err := p.Username(ctx, user)
+		if err != nil {
+			return posts, err
+		}
+
+		posts = append(posts, types.Post{Content: content, Username: name, CreatedAt: createdAt})
 	}
 	return posts, nil
 }
 
-func (p *Postgres) ViewFeed(ctx context.Context, userID types.UserID, page, limit int) ([]types.Post, error) {
+func (p *Postgres) ViewFeed(ctx context.Context, username string, page, limit int) ([]types.Post, error) {
 	var posts []types.Post
-	u, err := strconv.Atoi(string(userID))
+	u, err := p.UserID(ctx, username)
 	if err != nil {
 		return posts, err
 	}
@@ -157,10 +172,9 @@ func (p *Postgres) ViewFeed(ctx context.Context, userID types.UserID, page, limi
 	// Find all users the user is following.
 	var followingUsers []string
 	rows, err := p.db.QueryContext(ctx,
-		`SELECT idol
-		FROM users INNER JOIN followers
-		ON users.id = followers.user_id AND
-		users.id = $1`, u)
+		`SELECT idol FROM users 
+		INNER JOIN followers ON users.user = followers.user_id 
+		AND users.id = $1`, u)
 
 	defer rows.Close()
 	for rows.Next() {
@@ -173,9 +187,6 @@ func (p *Postgres) ViewFeed(ctx context.Context, userID types.UserID, page, limi
 
 	// Find most recent posts.
 	offset := page * limit
-	if offset < 1 {
-		offset = 0
-	}
 
 	param := "{" + strings.Join(followingUsers, ",") + "}"
 	postRows, err := p.db.QueryContext(ctx,
@@ -196,7 +207,13 @@ func (p *Postgres) ViewFeed(ctx context.Context, userID types.UserID, page, limi
 		if err := postRows.Scan(&content, &user, &createdAt); err != nil {
 			return posts, err
 		}
-		posts = append(posts, types.Post{Content: content, UserID: types.UserID(string(int(user))), CreatedAt: createdAt})
+
+		name, err := p.Username(ctx, user)
+		if err != nil {
+			return posts, err
+		}
+
+		posts = append(posts, types.Post{Content: content, Username: name, CreatedAt: createdAt})
 	}
 	return posts, nil
 }

@@ -3,13 +3,11 @@ package api
 import (
 	"errors"
 	"net/http"
-
-	"github.com/liftM/pooter/types"
 )
 
 type CreatePostRequest struct {
 	Content  string
-	UserID   types.UserID `json:"user_id"`
+	Username string
 	Password string
 }
 
@@ -25,7 +23,7 @@ func (s *Server) CreatePost(w http.ResponseWriter, r *http.Request) {
 	s.ReadRequest(r, &req)
 
 	// Verify auth.
-	ok, err := s.VerifyAuth(ctx, req.UserID, req.Password)
+	ok, err := s.db.Authenticate(ctx, req.Username, req.Password)
 	if err != nil {
 		panic(err)
 	} else if !ok {
@@ -33,7 +31,7 @@ func (s *Server) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create post.
-	err = s.db.CreatePost(ctx, req.UserID, req.Content)
+	err = s.db.CreatePost(ctx, req.Username, req.Content)
 	if err != nil {
 		panic(err)
 	}
