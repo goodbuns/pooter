@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
-	"net/http"
 
 	"github.com/liftM/pooter/api"
+	"github.com/liftM/pooter/effects/pooterdb"
 )
 
 func main() {
@@ -13,8 +14,12 @@ func main() {
 	conn := flag.String("db", "", "database connection string")
 	flag.Parse()
 
-	s := api.NewServer(*conn)
+	db, err := pooterdb.New(context.Background(), *conn)
+	if err != nil {
+		panic(err)
+	}
+	s := api.NewServer(db)
 
 	log.Println("Listening on port :8000")
-	http.ListenAndServe(":8000", s.Router)
+	s.Start()
 }

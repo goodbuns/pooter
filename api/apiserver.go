@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -10,34 +9,30 @@ import (
 )
 
 type Server struct {
-	Router *chi.Mux
-	DB     *pooterdb.Postgres
+	router *chi.Mux
+	db     *pooterdb.Postgres
 }
 
-func NewServer(conn string) *Server {
-	var err error
-	s := Server{}
-
-	// Connect to dependencies.
-	s.DB, err = pooterdb.New(context.Background(), conn)
-	if err != nil {
-		panic(err)
-	}
-
+func NewServer(db *pooterdb.Postgres) *Server {
 	// Set up router.
-	s.Router = chi.NewRouter()
+	r := chi.NewRouter()
+	s := Server{router: r, db: db}
 
 	// Set up middleware.
-	s.Router.Use(middleware.RequestID)
-	s.Router.Use(middleware.Logger)
-	s.Router.Use(middleware.Recoverer)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
 	// Register routes.
-	s.Router.Handle("/users.create", http.HandlerFunc(s.CreateUser))
-	s.Router.Handle("/users.follow", http.HandlerFunc(s.FollowUser))
-	s.Router.Handle("/users.posts", http.HandlerFunc(s.ListUserPosts))
-	s.Router.Handle("/poots.post", http.HandlerFunc(s.CreatePost))
-	s.Router.Handle("/poots.feed", http.HandlerFunc(s.ViewFeed))
+	r.Handle("/users.create", http.HandlerFunc(s.CreateUser))
+	r.Handle("/users.follow", http.HandlerFunc(s.FollowUser))
+	r.Handle("/users.posts", http.HandlerFunc(s.ListUserPosts))
+	r.Handle("/poots.post", http.HandlerFunc(s.CreatePost))
+	r.Handle("/poots.feed", http.HandlerFunc(s.ViewFeed))
 
 	return &s
+}
+
+func (s *Server) Start() {
+	http.ListenAndServe(":8000", s.router)
 }

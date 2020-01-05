@@ -45,7 +45,7 @@ func (s *Server) ViewFeed(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// View feed.
-	posts, err := s.DB.ViewFeed(ctx, req.UserID, req.Page, req.Limit)
+	posts, err := s.db.ViewFeed(ctx, req.UserID, req.Page, req.Limit)
 	if err != nil {
 		panic(err)
 	}

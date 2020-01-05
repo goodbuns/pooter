@@ -18,8 +18,8 @@ type CreateUserResponse struct {
 }
 
 type FollowUserRequest struct {
-	UserID   types.UserID `json:"user_id"`
-	FollowID types.UserID `json:"follow_id"`
+	UserID         types.UserID `json:"user_id"`
+	FollowedUserID types.UserID `json:"follow_id"`
 }
 
 type FollowUserResponse struct {
@@ -51,7 +51,7 @@ func (s *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create user.
-	uid, err := s.DB.CreateUser(ctx, req.Username, req.Password)
+	uid, err := s.db.CreateUser(ctx, req.Username, req.Password)
 	if err != nil {
 		panic(err)
 	}
@@ -85,12 +85,12 @@ func (s *Server) FollowUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Follow user.
-	if err := s.DB.FollowUser(ctx, req.UserID, req.FollowID); err != nil {
+	if err := s.db.FollowUser(ctx, req.UserID, req.FollowedUserID); err != nil {
 		panic(err)
 	}
 
 	// Return ID of followed user.
-	res, err := json.Marshal(FollowUserResponse{UserID: req.FollowID})
+	res, err := json.Marshal(FollowUserResponse{UserID: req.FollowedUserID})
 	if err != nil {
 		panic(err)
 	}
@@ -118,7 +118,7 @@ func (s *Server) ListUserPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Retrieve all posts from particular user.
-	p, err := s.DB.ListUserPosts(ctx, req.UserID)
+	p, err := s.db.ListUserPosts(ctx, req.UserID)
 	if err != nil {
 		panic(err)
 	}

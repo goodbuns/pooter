@@ -4,8 +4,6 @@ CREATE TABLE users (
   password TEXT   NOT NULL
 );
 
-SET TIME ZONE "PST8PDT";
-
 CREATE TABLE posts (
   id      SERIAL PRIMARY KEY,
   content TEXT,

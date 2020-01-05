@@ -44,7 +44,7 @@ func (s *Server) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create post.
-	err = s.DB.CreatePost(ctx, req.UserID, req.Content)
+	err = s.db.CreatePost(ctx, req.UserID, req.Content)
 	if err != nil {
 		panic(err)
 	}
