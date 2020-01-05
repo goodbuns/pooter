@@ -44,3 +44,27 @@ func (p *Postgres) CreateUser(ctx context.Context, username, password string) (U
 	}
 	return UserID(strconv.Itoa(id)), nil
 }
+
+func (p *Postgres) FollowUser(ctx context.Context, userID, followID string) error {
+	u, err := strconv.Atoi(userID)
+	if err != nil {
+		return err
+	}
+
+	f, err := strconv.Atoi(followID)
+	if err != nil {
+		return err
+	}
+
+	_, err = p.db.Exec(
+		`INSERT INTO followers
+			(id, userid, followid)
+		VALUES
+			(DEFAULT, $1, $2)
+		RETURNING id`, u, f)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
