@@ -35,6 +35,7 @@ func NewServer(conn string) *Server {
 	// Register routes.
 	s.Router.Handle("/users.create", http.HandlerFunc(s.CreateUser))
 	s.Router.Handle("/users.follow", http.HandlerFunc(s.FollowUser))
+	s.Router.Handle("/users.posts", http.HandlerFunc(s.ListUserPosts))
 	s.Router.Handle("/poots.post", http.HandlerFunc(s.CreatePost))
 
 	return &s

@@ -17,8 +17,6 @@ func main() {
 
 	// r.Handle("/users.posts", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
-	// r.Handle("/poots.post", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
-
 	// r.Handle("/poots.feed", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
 	log.Println("Listening on port :8000")

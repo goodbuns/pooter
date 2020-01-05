@@ -99,9 +99,32 @@ func (p *Postgres) CreatePost(ctx context.Context, userID, content string) error
 		VALUES
 			(DEFAULT, $1, $2)
 		RETURNING id`, content, u)
-
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (p *Postgres) ListUserPosts(ctx context.Context, userID string) ([]string, error) {
+	var posts []string
+	u, err := strconv.Atoi(userID)
+	if err != nil {
+		return posts, err
+	}
+
+	rows, err := p.db.QueryContext(ctx,
+		`SELECT content FROM posts
+		WHERE userid = $1`, u)
+	if err != nil {
+		return posts, nil
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var post string
+		if err := rows.Scan(&post); err != nil {
+			return posts, err
+		}
+		posts = append(posts, post)
+	}
+	return posts, nil
 }

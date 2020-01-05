@@ -26,6 +26,19 @@ type FollowUserResponse struct {
 	UserID string `json:"user_id"`
 }
 
+type ListUserPostsRequest struct {
+	UserID string `json:"user_id"`
+}
+
+type ListUserPostsResponse struct {
+	Posts []Post
+}
+
+type Post struct {
+	Content string
+	UserID  string `json:"user_id"`
+}
+
 func (s *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Read request.
 	ctx := r.Context()
@@ -83,6 +96,45 @@ func (s *Server) FollowUser(w http.ResponseWriter, r *http.Request) {
 
 	// Return ID of followed user.
 	res, err := json.Marshal(FollowUserResponse{UserID: req.FollowID})
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = w.Write(res)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (s *Server) ListUserPosts(w http.ResponseWriter, r *http.Request) {
+	// Read request.
+	ctx := r.Context()
+
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	var req ListUserPostsRequest
+	err = json.Unmarshal(body, &req)
+	if err != nil {
+		panic(err)
+	}
+
+	// Retrieve all posts from particular user.
+	var posts []Post
+	p, err := s.DB.ListUserPosts(ctx, req.UserID)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, post := range p {
+		posts = append(posts, Post{Content: post, UserID: req.UserID})
+	}
+
+	// Return all posts for particular user.
+	res, err := json.Marshal(ListUserPostsResponse{Posts: posts})
 	if err != nil {
 		panic(err)
 	}
