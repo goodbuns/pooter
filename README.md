@@ -33,5 +33,11 @@ curl localhost:8000/users.follow --data '{"user_id":"1", "follow_id":"2"}'
 Test post creation by user:
 
 ```
-curl localhost:8000/poots.post --data '{"user_id":"1", "password":"hello", "content":"i'm a sleepo beepo"}'
+curl localhost:8000/poots.post --data '{"user_id":"1", "password":"hello", "content":"im a sleepo beepo"}'
+```
+
+List all posts by a user:
+
+```
+curl localhost:8000/users.posts --data '{"user_id":"1"}'
 ```

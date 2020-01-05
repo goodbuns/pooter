@@ -1,15 +1,15 @@
 version: "3"
 
 services:
-  pooter:
-    build:
-      context: ../../
-      dockerfile: ./images/pooterserver/Dockerfile
-    command: ["-db=postgresql://pooter:hunter2@db:5432/pooter"]
-    ports:
-      - "8000:8000"
-    depends_on: 
-      - db
+  # pooter:
+  #   build:
+  #     context: ../../
+  #     dockerfile: ./images/pooterserver/Dockerfile
+  #   command: ["-db=postgresql://pooter:hunter2@db:5432/pooter"]
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on: 
+  #     - db
 
   db:
     build:

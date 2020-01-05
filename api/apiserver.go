@@ -37,6 +37,7 @@ func NewServer(conn string) *Server {
 	s.Router.Handle("/users.follow", http.HandlerFunc(s.FollowUser))
 	s.Router.Handle("/users.posts", http.HandlerFunc(s.ListUserPosts))
 	s.Router.Handle("/poots.post", http.HandlerFunc(s.CreatePost))
+	s.Router.Handle("/poots.feed", http.HandlerFunc(s.ViewFeed))
 
 	return &s
 }

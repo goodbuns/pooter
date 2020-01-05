@@ -4,15 +4,18 @@ CREATE TABLE users (
   password TEXT   NOT NULL
 );
 
+SET TIME ZONE "PST8PDT";
+
 CREATE TABLE posts (
   id      SERIAL PRIMARY KEY,
   content TEXT,
-  userid  INTEGER REFERENCES users(id)
+  user_id  INTEGER REFERENCES users(id),
+  created_at TIMESTAMPTZ
 );
 
 CREATE TABLE followers (
   id          SERIAL  PRIMARY KEY,
-  userid      INTEGER REFERENCES users(id),
-  followid    INTEGER REFERENCES users(id),
-  CHECK (userid != followid)
+  user_id      INTEGER REFERENCES users(id),
+  follow_id    INTEGER REFERENCES users(id),
+  CHECK (user_id != follow_id)
 );

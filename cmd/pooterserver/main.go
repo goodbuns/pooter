@@ -15,10 +15,6 @@ func main() {
 
 	s := api.NewServer(*conn)
 
-	// r.Handle("/users.posts", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
-
-	// r.Handle("/poots.feed", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
-
 	log.Println("Listening on port :8000")
 	http.ListenAndServe(":8000", s.Router)
 }

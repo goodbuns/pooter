@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/liftM/pooter/effects/pooterdb"
+	"github.com/liftM/pooter/types"
 )
 
 type CreateUserRequest struct {
@@ -14,29 +14,24 @@ type CreateUserRequest struct {
 }
 
 type CreateUserResponse struct {
-	UserID pooterdb.UserID `json:"user_id"`
+	UserID types.UserID `json:"user_id"`
 }
 
 type FollowUserRequest struct {
-	UserID   string `json:"user_id"`
-	FollowID string `json:"follow_id"`
+	UserID   types.UserID `json:"user_id"`
+	FollowID types.UserID `json:"follow_id"`
 }
 
 type FollowUserResponse struct {
-	UserID string `json:"user_id"`
+	UserID types.UserID `json:"user_id"`
 }
 
 type ListUserPostsRequest struct {
-	UserID string `json:"user_id"`
+	UserID types.UserID `json:"user_id"`
 }
 
 type ListUserPostsResponse struct {
-	Posts []Post
-}
-
-type Post struct {
-	Content string
-	UserID  string `json:"user_id"`
+	Posts []types.Post
 }
 
 func (s *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -123,18 +118,13 @@ func (s *Server) ListUserPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Retrieve all posts from particular user.
-	var posts []Post
 	p, err := s.DB.ListUserPosts(ctx, req.UserID)
 	if err != nil {
 		panic(err)
 	}
 
-	for _, post := range p {
-		posts = append(posts, Post{Content: post, UserID: req.UserID})
-	}
-
 	// Return all posts for particular user.
-	res, err := json.Marshal(ListUserPostsResponse{Posts: posts})
+	res, err := json.Marshal(ListUserPostsResponse{Posts: p})
 	if err != nil {
 		panic(err)
 	}

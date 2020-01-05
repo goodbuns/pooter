@@ -5,11 +5,13 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/liftM/pooter/types"
 )
 
 type CreatePostRequest struct {
 	Content  string
-	UserID   string `json:"user_id"`
+	UserID   types.UserID `json:"user_id"`
 	Password string
 }
 
