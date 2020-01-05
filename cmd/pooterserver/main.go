@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	s := api.NewServer(db)
+	s := api.New(db)
 
 	log.Println("Listening on port :8000")
 	s.Start()

@@ -22,12 +22,13 @@ Test user creation:
 
 ```
 curl localhost:8000/users.create --data '{"username":"bab", "password":"hello"}'
+curl localhost:8000/users.create --data '{"username":"ba", "password":"hello again"}'
 ```
 
 Test following a user (make sure 2 users have been created):
 
 ```
-curl localhost:8000/users.follow --data '{"user_id":"1", "follow_id":"2"}'
+curl localhost:8000/users.follow --data '{"username":"bab", "idol":"ba"}'
 ```
 
 Test post creation by user:

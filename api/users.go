@@ -11,13 +11,9 @@ type CreateUserRequest struct {
 	Password string
 }
 
-type CreateUserResponse struct {
-	UserID types.UserID `json:"user_id"`
-}
-
 type FollowUserRequest struct {
-	UserID         types.UserID `json:"user_id"`
-	FollowedUserID types.UserID `json:"follow_id"`
+	Username string
+	Idol     string
 }
 
 type ListUserPostsRequest struct {
@@ -36,14 +32,15 @@ func (s *Server) CreateUser(w http.ResponseWriter, r *http.Request) {
 	s.ReadRequest(r, &req)
 
 	// Create user.
-	uid, err := s.db.CreateUser(ctx, req.Username, req.Password)
-	if err != nil {
+	if err := s.db.CreateUser(ctx, req.Username, req.Password); err != nil {
 		panic(err)
 	}
 
-	// Return ID of created user.
-	resp := CreateUserResponse{UserID: uid}
-	s.WriteResponse(w, &resp)
+	// Return empty response.
+	_, err := w.Write([]byte{})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) FollowUser(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +51,7 @@ func (s *Server) FollowUser(w http.ResponseWriter, r *http.Request) {
 	s.ReadRequest(r, &req)
 
 	// Follow user.
-	if err := s.db.FollowUser(ctx, req.UserID, req.FollowedUserID); err != nil {
+	if err := s.db.FollowUser(ctx, req.Username, req.Idol); err != nil {
 		panic(err)
 	}
 

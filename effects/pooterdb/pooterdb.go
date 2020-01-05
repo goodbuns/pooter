@@ -12,8 +12,8 @@ import (
 )
 
 type PooterDB interface {
-	CreateUser(ctx context.Context, username, password string) (types.UserID, error)
-	FollowUser(ctx context.Context, userID, followID types.UserID) error
+	CreateUser(ctx context.Context, username, password string) error
+	FollowUser(ctx context.Context, user, idol string) error
 	RetrievePassword(ctx context.Context, userID types.UserID) (string, error)
 	CreatePost(ctx context.Context, userID types.UserID, content string) error
 	ListUserPosts(ctx context.Context, userID types.UserID) ([]types.Post, error)
@@ -35,39 +35,50 @@ func New(ctx context.Context, conn string) (*Postgres, error) {
 	return &Postgres{db: db}, nil
 }
 
-func (p *Postgres) CreateUser(ctx context.Context, username, password string) (types.UserID, error) {
-	result := p.db.QueryRowContext(ctx,
+func (p *Postgres) CreateUser(ctx context.Context, username, password string) error {
+	_, err := p.db.Exec(
 		`INSERT INTO users
 			(id, username, password)
 		VALUES
-			(DEFAULT, $1, $2)
-		RETURNING id`, username, password)
+			(DEFAULT, $1, $2)`, username, password)
 
-	var id int
-	err := result.Scan(&id)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return types.UserID(strconv.Itoa(id)), nil
+	return nil
 }
 
-func (p *Postgres) FollowUser(ctx context.Context, userID, followID types.UserID) error {
-	u, err := strconv.Atoi(string(userID))
+func (p *Postgres) UserID(ctx context.Context, username string) (int, error) {
+	var uid int
+
+	result := p.db.QueryRowContext(ctx,
+		`SELECT id FROM users
+		WHERE username = $1`, username)
+	err := result.Scan(&uid)
+	if err != nil {
+		return uid, err
+	}
+
+	return uid, nil
+}
+
+func (p *Postgres) FollowUser(ctx context.Context, username, idol string) error {
+	u, err := p.UserID(ctx, username)
 	if err != nil {
 		return err
 	}
 
-	f, err := strconv.Atoi(string(followID))
+	i, err := p.UserID(ctx, idol)
 	if err != nil {
 		return err
 	}
 
 	_, err = p.db.Exec(
 		`INSERT INTO followers
-			(id, user_id, follow_id)
+			(id, user_id, idol)
 		VALUES
 			(DEFAULT, $1, $2)
-		RETURNING id`, u, f)
+		RETURNING id`, u, i)
 
 	if err != nil {
 		return err
@@ -101,7 +112,7 @@ func (p *Postgres) CreatePost(ctx context.Context, userID types.UserID, content 
 
 	_, err = p.db.Exec(
 		`INSERT INTO posts
-			(id, content, user_id, created_at)
+			(id, content, author, created_at)
 		VALUES
 			(DEFAULT, $1, $2, NOW())
 		RETURNING id`, content, u)
@@ -118,7 +129,7 @@ func (p *Postgres) ListUserPosts(ctx context.Context, userID types.UserID) ([]ty
 		return posts, err
 	}
 	rows, err := p.db.QueryContext(ctx,
-		`SELECT content, user_id, created_at FROM posts
+		`SELECT content, author, created_at FROM posts
 		WHERE user_id = $1`, u)
 	if err != nil {
 		return posts, err
@@ -146,7 +157,7 @@ func (p *Postgres) ViewFeed(ctx context.Context, userID types.UserID, page, limi
 	// Find all users the user is following.
 	var followingUsers []string
 	rows, err := p.db.QueryContext(ctx,
-		`SELECT follow_id
+		`SELECT idol
 		FROM users INNER JOIN followers
 		ON users.id = followers.user_id AND
 		users.id = $1`, u)
@@ -168,8 +179,8 @@ func (p *Postgres) ViewFeed(ctx context.Context, userID types.UserID, page, limi
 
 	param := "{" + strings.Join(followingUsers, ",") + "}"
 	postRows, err := p.db.QueryContext(ctx,
-		`SELECT content, user_id, created_at FROM posts
-		WHERE user_id = ANY($1::int[])
+		`SELECT content, author, created_at FROM posts
+		WHERE author = ANY($1::int[])
 		ORDER BY id DESC
 		LIMIT $2
 		OFFSET $3`, param, limit, offset)

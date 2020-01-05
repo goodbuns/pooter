@@ -8,4 +8,9 @@ type Post struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type Auth struct {
+	Username string
+	Password string
+}
+
 type UserID string

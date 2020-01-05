@@ -15,7 +15,7 @@ type Server struct {
 	db     *pooterdb.Postgres
 }
 
-func NewServer(db *pooterdb.Postgres) *Server {
+func New(db *pooterdb.Postgres) *Server {
 	// Set up router.
 	r := chi.NewRouter()
 	s := Server{router: r, db: db}
