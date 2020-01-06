@@ -4,7 +4,7 @@ import "time"
 
 type Post struct {
 	Content   string
-	Username  string    `json:"user_id"`
+	Username  string
 	CreatedAt time.Time `json:"created_at"`
 }
 

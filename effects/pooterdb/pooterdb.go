@@ -2,7 +2,6 @@ package pooterdb
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -16,7 +15,7 @@ type PooterDB interface {
 	Authenticate(ctx context.Context, username, password string) (bool, error)
 	CreatePost(ctx context.Context, username, content string) error
 	ListUserPosts(ctx context.Context, username string) ([]types.Post, error)
-	ViewFeed(ctx context.Context, username string, page, limit int) ([]types.Post, error)
+	ViewFeed(ctx context.Context, username string, postTime time.Time, pageSize int) ([]types.Post, error)
 }
 
 var _ PooterDB = &Postgres{}
@@ -162,53 +161,34 @@ func (p *Postgres) ListUserPosts(ctx context.Context, username string) ([]types.
 	return posts, nil
 }
 
-func (p *Postgres) ViewFeed(ctx context.Context, username string, page, limit int) ([]types.Post, error) {
+func (p *Postgres) ViewFeed(ctx context.Context, username string, beforeTime time.Time, pageSize int) ([]types.Post, error) {
 	var posts []types.Post
 	u, err := p.UserID(ctx, username)
 	if err != nil {
 		return posts, err
 	}
 
-	// Find all users the user is following.
-	var followingUsers []string
 	rows, err := p.db.QueryContext(ctx,
-		`SELECT idol FROM users 
-		INNER JOIN followers ON users.user = followers.user_id 
-		AND users.id = $1`, u)
-
-	defer rows.Close()
-	for rows.Next() {
-		var user string
-		if err := rows.Scan(&user); err != nil {
-			return posts, err
-		}
-		followingUsers = append(followingUsers, user)
-	}
-
-	// Find most recent posts.
-	offset := page * limit
-
-	param := "{" + strings.Join(followingUsers, ",") + "}"
-	postRows, err := p.db.QueryContext(ctx,
-		`SELECT content, author, created_at FROM posts
-		WHERE author = ANY($1::int[])
-		ORDER BY id DESC
-		LIMIT $2
-		OFFSET $3`, param, limit, offset)
+		`SELECT content, author, created_at FROM users 
+		INNER JOIN followers ON users.id = followers.user_id AND followers.user_id = $1
+		INNER JOIN posts ON posts.author = followers.idol
+		WHERE created_at < $2
+		ORDER BY created_at DESC
+		LIMIT $3`, u, beforeTime, pageSize)
 	if err != nil {
 		return posts, err
 	}
-	defer postRows.Close()
+	defer rows.Close()
 
-	for postRows.Next() {
-		var user int64
+	for rows.Next() {
+		var author int64
 		var content string
 		var createdAt time.Time
-		if err := postRows.Scan(&content, &user, &createdAt); err != nil {
+		if err := rows.Scan(&content, &author, &createdAt); err != nil {
 			return posts, err
 		}
 
-		name, err := p.Username(ctx, user)
+		name, err := p.Username(ctx, author)
 		if err != nil {
 			return posts, err
 		}
