@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type BearerTokenResponse struct {
@@ -75,8 +76,16 @@ func main() {
 		panic(err)
 	}
 
+	i := 0
+	last := time.Now()
 	scanner := bufio.NewScanner(firehose.Body)
 	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+		i++
+		if i%100 == 0 {
+			now := time.Now()
+			delta := now.Sub(last)
+			fmt.Println(i, delta.Seconds())
+			last = now
+		}
 	}
 }
