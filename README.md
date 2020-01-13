@@ -1,6 +1,6 @@
 # pooter
 
-Pooter is Twitter for thots and poots.
+Pooter is a simple Twitter clone.
 
 ## Development
 
